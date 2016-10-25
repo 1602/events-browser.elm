@@ -7,12 +7,8 @@ import Html exposing (Html, div, button, text, pre, ul, li, span, a, input)
 import Html.Events exposing (onClick, onInput, onFocus)
 import Html.Attributes as Attr exposing (style, class, value, property)
 import Html.App
-import Http
 import Task exposing (Task)
-import Json.Decode as Decode
-import ErrorRecord exposing (..)
-import ErrorRecordsDecoder exposing (..)
-import Components.ErrorRecordOverview exposing (viewErrorRecord, ViewErrorRecordProps)
+import Components.ErrorRecordList as ErrorRecordList
 import Components.Filters as Filters exposing (filters, visibleRecords)
 import Messages exposing (Msg(..), FilterType(..))
 import Keyboard
@@ -22,9 +18,8 @@ import Keyboard
 
 
 type alias Model =
-    { records : List ErrorRecord
+    { records : ErrorRecordList.Model
     , error : String
-    , selectedRecordId : ErrorRecordId
     , filter : Filters.Model
     , focus : String
     }
@@ -32,8 +27,9 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model []
-        ""
+    let
+        ( list, command )
+    ( Model ErrorRecordList.init
         ""
         Filters.init
         ""
@@ -75,24 +71,9 @@ view model =
             ]
 
 
-decode : Decode.Decoder (List ErrorRecord)
-decode =
-    Decode.at [ "errors" ] (Decode.list decodeError)
-
-
-url : String
-url =
-    "http://errors.ub.io/errors"
-
-
-fetchTask : Task Http.Error (List ErrorRecord)
-fetchTask =
-    Http.get decode url
-
-
 fetchCmd : Cmd Msg
 fetchCmd =
-    Task.perform FetchError FetchSuccess fetchTask
+    Task.perform FetchError FetchSuccess ErrorRecord.fetchErrors
 
 
 
@@ -136,7 +117,7 @@ update msg model =
                         let
                             id =
                                 visibleRecords model.filter model.records
-                                    |> nextId model.selectedRecordId
+                                    |> ErrorRecord.nextId model.selectedRecordId
                         in
                             update (SelectErrorRecord id) model
 
@@ -144,7 +125,7 @@ update msg model =
                         let
                             id =
                                 visibleRecords model.filter model.records
-                                    |> prevId model.selectedRecordId
+                                    |> ErrorRecord.prevId model.selectedRecordId
                         in
                             update (SelectErrorRecord id) model
 
@@ -154,79 +135,6 @@ update msg model =
                                 Debug.log "key pressed" code
                         in
                             model ! []
-
-
-nextId : ErrorRecordId -> List ErrorRecord -> ErrorRecordId
-nextId id list =
-    let
-        nextItem =
-            next list id
-    in
-        case nextItem of
-            Just nextItem ->
-                nextItem.id
-
-            Nothing ->
-                case list of
-                    head :: tail ->
-                        head.id
-
-                    _ ->
-                        ""
-
-
-
--- Autocomplete.update
-
-
-prevId : ErrorRecordId -> List ErrorRecord -> ErrorRecordId
-prevId id list =
-    let
-        prevItem =
-            prev list id
-    in
-        case prevItem of
-            Just prevItem ->
-                prevItem.id
-
-            Nothing ->
-                case lastElem list of
-                    Just item ->
-                        item.id
-
-                    Nothing ->
-                        ""
-
-
-next : List ErrorRecord -> ErrorRecordId -> Maybe ErrorRecord
-next list id =
-    case list of
-        head :: target :: tail ->
-            if head.id == id then
-                Just target
-            else
-                next (target :: tail) id
-
-        _ ->
-            Nothing
-
-
-lastElem : List a -> Maybe a
-lastElem =
-    List.foldl (Just >> always) Nothing
-
-
-prev : List ErrorRecord -> ErrorRecordId -> Maybe ErrorRecord
-prev list id =
-    case list of
-        head :: target :: tail ->
-            if target.id == id then
-                Just head
-            else
-                prev (target :: tail) id
-
-        _ ->
-            Nothing
 
 
 
