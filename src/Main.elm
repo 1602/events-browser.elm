@@ -115,11 +115,7 @@ update msg model =
             { model | error = (toString error) } ! []
 
         FocusOn id ->
-            let
-                focus =
-                    Dom.focus id
-            in
-                model ! [ Task.perform (\_ -> NoOp) (\_ -> NoOp) focus ]
+            model ! [ Task.perform (\_ -> NoOp) (\_ -> NoOp) (Dom.focus id) ]
 
         UpdateFilters filterType msg ->
             { model | filter = Filters.update filterType msg model.filter } ! []
@@ -133,20 +129,10 @@ update msg model =
             else
                 case Char.fromCode code of
                     'J' ->
-                        let
-                            id =
-                                visibleRecords model.filter model.records
-                                    |> nextId model.selectedRecordId
-                        in
-                            update (SelectErrorRecord id) model
+                        navigateInList nextId model
 
                     'K' ->
-                        let
-                            id =
-                                visibleRecords model.filter model.records
-                                    |> prevId model.selectedRecordId
-                        in
-                            update (SelectErrorRecord id) model
+                        navigateInList prevId model
 
                     _ ->
                         let
@@ -155,6 +141,14 @@ update msg model =
                         in
                             model ! []
 
+navigateInList : (ErrorRecordId -> List ErrorRecord -> ErrorRecordId) -> Model -> (Model, Cmd Msg)
+navigateInList fn model =
+    let
+        id =
+            visibleRecords model.filter model.records
+                |> nextId model.selectedRecordId
+    in
+        update (SelectErrorRecord id) model
 
 nextId : ErrorRecordId -> List ErrorRecord -> ErrorRecordId
 nextId id list =
