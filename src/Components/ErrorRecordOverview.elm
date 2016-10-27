@@ -2,16 +2,18 @@ module Components.ErrorRecordOverview
     exposing
         ( viewErrorRecord
         , ViewErrorRecordProps
+          -- , Msg
+          --, update
         )
 
 import String exposing (slice)
 import Util exposing (..)
-import ErrorRecord exposing (..)
-import Messages exposing (Msg(..))
+import ErrorRecord
 import Html.Attributes as Attr exposing (style, property, id, tabindex)
 import Html.Events exposing (onClick)
 import Html exposing (Html, div, li, a, span, text)
 import Json.Encode as Json
+import Components.Filters as Filters exposing (FilterType(..))
 
 
 type alias ViewErrorRecordProps =
@@ -28,7 +30,20 @@ type alias ViewErrorRecordProps =
         b
 
 
-viewErrorRecord : ViewErrorRecordProps -> ErrorRecord -> Html Msg
+
+{-
+   update : Msg -> ErrorRecord.Model -> Cmd Msg
+   update msg =
+       case msg of
+           FilterByApp s ->
+               []
+
+           FilterByEnv s ->
+               []
+-}
+
+
+viewErrorRecord : ViewErrorRecordProps -> ErrorRecord.Model -> Html msg
 viewErrorRecord { isActive, aboutToDelete } record =
     let
         backgroundColor =
@@ -70,23 +85,22 @@ viewErrorRecord { isActive, aboutToDelete } record =
         occurrences =
             Json.string <| "&times" ++ (toString record.occurrences)
     in
-        li [ id record.id, tabindex 1, style css.listItem, onClick (SelectErrorRecord record.id) ]
-            [ div [ style msgStyle ]
-                [ a
-                    [ style css.wrapper ]
-                    [ span [ style css.appName ] [ text appName ]
-                    , span [ style css.message ] [ text record.message ]
-                    ]
-                , span
-                    [ style css.errorStats ]
-                    [ span
-                        [ property "innerHTML" occurrences ]
-                        []
-                    , text " "
-                    , span [ style css.envBadge ] [ text envName ]
-                    , text " "
-                    , span [] [ text howLongAgo ]
-                    ]
+        div [ style msgStyle ]
+            [ a
+                [ style css.wrapper ]
+                -- [ span [ style css.appName, onClick (ListMessages (ErrorRecordOverviewMessage (FilterApp record.app))) ] [ text appName ]
+                [ span [ style css.appName ] [ text appName ]
+                , span [ style css.message ] [ text record.message ]
+                ]
+            , span
+                [ style css.errorStats ]
+                [ span
+                    [ property "innerHTML" occurrences ]
+                    []
+                , text " "
+                , span [ style css.envBadge ] [ text envName ]
+                , text " "
+                , span [] [ text howLongAgo ]
                 ]
             ]
 
@@ -108,7 +122,6 @@ viewErrorRecord { isActive, aboutToDelete } record =
 
 css :
     { message : InlineStyle
-    , listItem : InlineStyle
     , wrapper : InlineStyle
     , appName : InlineStyle
     , msgBlock : InlineStyle
@@ -138,13 +151,6 @@ css =
         , "text-transform" => "uppercase"
         , "font-size" => "9px"
         , "letter-spacing" => "0.05em"
-        ]
-    , listItem =
-        [ "outline" => "0"
-        , "position" => "relative"
-        , "list-style" => "none"
-        , "margin" => "5px 0 5px 5px"
-        , "display" => "flex"
         ]
     , wrapper =
         [ "maxWidth" => "calc(100% - 150px)"

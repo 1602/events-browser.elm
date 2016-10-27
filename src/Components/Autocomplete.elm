@@ -3,7 +3,7 @@ module Components.Autocomplete
         ( autocomplete
         , Model
         , init
-        , ActionType
+        , Msg
         , update
         )
 
@@ -15,7 +15,7 @@ import Html.Attributes as Attr exposing (style, class, value, property, tabindex
 import Util exposing ((=>), InlineStyle)
 
 
-type ActionType
+type Msg
     = SetText String
     | EnterPopup
     | LeavePopup
@@ -31,7 +31,7 @@ type alias Model =
     }
 
 
-update : ActionType -> Model -> Model
+update : Msg -> Model -> Model
 update action state =
     case action of
         SetText text ->
@@ -61,7 +61,7 @@ init =
     }
 
 
-autocomplete : Model -> List String -> (ActionType -> msg) -> Html msg
+autocomplete : Model -> List String -> (Msg -> msg) -> Html msg
 autocomplete current collection msg =
     let
         inputStyle =

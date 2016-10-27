@@ -1,16 +1,10 @@
 module Main exposing (..)
 
-import Dom
-import Char
-import Util exposing (..)
 import Html exposing (Html, div, button, text, pre, ul, li, span, a, input)
-import Html.Events exposing (onClick, onInput, onFocus)
-import Html.Attributes as Attr exposing (style, class, value, property)
 import Html.App
-import Task exposing (Task)
 import Components.ErrorRecordList as ErrorRecordList
 import Components.Filters as Filters exposing (filters, visibleRecords)
-import Messages exposing (Msg(..), FilterType(..))
+import Components.Autocomplete as Autocomplete
 import Keyboard
 
 
@@ -19,22 +13,22 @@ import Keyboard
 
 type alias Model =
     { records : ErrorRecordList.Model
-    , error : String
     , filter : Filters.Model
-    , focus : String
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     let
-        ( list, command )
-    ( Model ErrorRecordList.init
-        ""
-        Filters.init
-        ""
-    , fetchCmd
-    )
+        ( list, command ) =
+            ErrorRecordList.init
+
+        filter =
+            Filters.init
+    in
+        ( Model list filter
+        , Cmd.map ListMessages command
+        )
 
 
 
@@ -44,40 +38,27 @@ init =
 view : Model -> Html Msg
 view model =
     let
-        listStyle =
-            [ "padding" => "0", "margin" => "0" ]
-
         records =
-            visibleRecords model.filter model.records
+            ErrorRecordList.applyFilter (visibleRecords model.filter) model.records
 
-        listItems =
-            records
-                |> List.map
-                    (\record ->
-                        viewErrorRecord
-                            { isActive = record.id == model.selectedRecordId
-                            , aboutToDelete = False
-                            }
-                            record
-                    )
+        list =
+            Html.App.map ListMessages (ErrorRecordList.render model.records records)
     in
         div []
-            [ div [ style [ "display" => "flex", "align-items" => "center" ] ]
-                [ button [ onClick Fetch ] [ text "Fetch" ]
-                , text model.error
-                ]
-            , filters model.filter records UpdateFilters
-            , ul [ style listStyle ] listItems
+            [ Filters.filters model.filter records FiltersMessages
+            , list
             ]
-
-
-fetchCmd : Cmd Msg
-fetchCmd =
-    Task.perform FetchError FetchSuccess ErrorRecord.fetchErrors
 
 
 
 -- UPDATE
+
+
+type Msg
+    = NoOp
+    | ListMessages ErrorRecordList.Msg
+    | FiltersMessages Filters.FilterType Autocomplete.Msg
+    | KeyMsg Keyboard.KeyCode
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -86,55 +67,18 @@ update msg model =
         NoOp ->
             model ! []
 
-        Fetch ->
-            model ! [ fetchCmd ]
-
-        FetchSuccess records ->
-            { model | records = records } ! []
-
-        FetchError error ->
-            { model | error = (toString error) } ! []
-
-        FocusOn id ->
+        ListMessages msg ->
             let
-                focus =
-                    Dom.focus id
+                ( records, cmd ) =
+                    ErrorRecordList.update msg model.records
             in
-                model ! [ Task.perform (\_ -> NoOp) (\_ -> NoOp) focus ]
+                { model | records = records } ! [ Cmd.map ListMessages cmd ]
 
-        UpdateFilters filterType msg ->
+        FiltersMessages filterType msg ->
             { model | filter = Filters.update filterType msg model.filter } ! []
 
-        SelectErrorRecord errorRecordId ->
-            update (FocusOn errorRecordId) { model | selectedRecordId = errorRecordId }
-
         KeyMsg code ->
-            if model.filter.app.expanded || model.filter.env.expanded || model.filter.message.expanded then
-                model ! []
-            else
-                case Char.fromCode code of
-                    'J' ->
-                        let
-                            id =
-                                visibleRecords model.filter model.records
-                                    |> ErrorRecord.nextId model.selectedRecordId
-                        in
-                            update (SelectErrorRecord id) model
-
-                    'K' ->
-                        let
-                            id =
-                                visibleRecords model.filter model.records
-                                    |> ErrorRecord.prevId model.selectedRecordId
-                        in
-                            update (SelectErrorRecord id) model
-
-                    _ ->
-                        let
-                            a =
-                                Debug.log "key pressed" code
-                        in
-                            model ! []
+            model ! []
 
 
 

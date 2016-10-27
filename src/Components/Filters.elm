@@ -1,12 +1,11 @@
-module Components.Filters exposing (filters, Model, init, update, visibleRecords)
+module Components.Filters exposing (filters, Model, init, update, visibleRecords, FilterType)
 
 import Set
 import String
 import Util exposing (..)
 import Html exposing (Html, div)
-import ErrorRecord exposing (..)
+import ErrorRecord
 import Html.Attributes as Attr exposing (style)
-import Messages exposing (Msg(..), FilterType(..))
 import Components.Autocomplete as Autocomplete exposing (autocomplete)
 
 
@@ -17,6 +16,12 @@ type alias Model =
     }
 
 
+type FilterType
+    = FilterApp
+    | FilterMessage
+    | FilterEnvironment
+
+
 init : Model
 init =
     { app = Autocomplete.init
@@ -25,7 +30,7 @@ init =
     }
 
 
-visibleRecords : Model -> List ErrorRecord -> List ErrorRecord
+visibleRecords : Model -> List ErrorRecord.Model -> List ErrorRecord.Model
 visibleRecords filter collection =
     let
         app =
@@ -46,7 +51,7 @@ visibleRecords filter collection =
                 )
 
 
-update : FilterType -> Autocomplete.ActionType -> Model -> Model
+update : FilterType -> Autocomplete.Msg -> Model -> Model
 update filterType msg oldFilter =
     case filterType of
         FilterApp ->
@@ -59,7 +64,7 @@ update filterType msg oldFilter =
             { oldFilter | env = Autocomplete.update msg oldFilter.env }
 
 
-filters : Model -> List ErrorRecord -> (FilterType -> Autocomplete.ActionType -> a) -> Html a
+filters : Model -> List ErrorRecord.Model -> (FilterType -> Autocomplete.Msg -> a) -> Html a
 filters filter records msg =
     let
         collect fn =

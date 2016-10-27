@@ -1,30 +1,6 @@
-module ErrorRecord exposing (Id, Model, ErrorDetails, nextId, prevId, fetchErrors)
+module ErrorRecord exposing (Id, Model, ErrorDetails, nextId, prevId)
 
 -- import Dict exposing (Dict)
-import Http
-import Json.Decode exposing ((:=))
-import Json.Decode.Extra exposing ((|:))
-import Task exposing (Task)
-
-decodeErrorDetails : Json.Decode.Decoder ErrorDetails
-decodeErrorDetails =
-    Json.Decode.object1 ErrorDetails ("timestamp" := Json.Decode.int)
-
-decodeError : Json.Decode.Decoder Model
-decodeError =
-    Json.Decode.succeed Model
-        |: ("id" := Json.Decode.string)
-        |: ("lastOccurrence" := Json.Decode.string)
-        |: ("occurrences" := Json.Decode.int)
-        |: ("details" := Json.Decode.list decodeErrorDetails)
-        |: ("message" := Json.Decode.string)
-        |: (Json.Decode.maybe ("stack" := Json.Decode.string))
-        |: ("type" := Json.Decode.string)
-        |: ("pid" := Json.Decode.string)
-        |: ("host" := Json.Decode.string)
-        |: ("cwd" := Json.Decode.string)
-        |: ("app" := Json.Decode.string)
-        |: ("env" := Json.Decode.string)
 
 
 type alias Id =
@@ -51,20 +27,6 @@ type alias ErrorDetails =
     { timestamp : Int
     }
 
-decode : Json.Decode.Decoder (List Model)
-decode =
-    Json.Decode.at [ "errors" ] (Json.Decode.list decodeError)
-
-
-url : String
-url =
-    "http://errors.ub.io/errors"
-
-
-fetchErrors : Task Http.Error (List Model)
-fetchErrors =
-    Http.get decode url
-
 
 nextId : Id -> List Model -> Id
 nextId id list =
@@ -83,7 +45,6 @@ nextId id list =
 
                     _ ->
                         ""
-
 
 
 prevId : Id -> List Model -> Id
@@ -134,5 +95,3 @@ prev list id =
 
         _ ->
             Nothing
-
-
