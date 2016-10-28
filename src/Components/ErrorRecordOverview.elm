@@ -7,11 +7,12 @@ module Components.ErrorRecordOverview
 import String exposing (slice)
 import Util exposing (..)
 import ErrorRecord exposing (..)
-import Messages exposing (Msg(..))
+import Messages exposing (Msg(..), FilterType(..))
 import Html.Attributes as Attr exposing (style, property, id, tabindex)
 import Html.Events exposing (onClick)
 import Html exposing (Html, div, li, a, span, text)
 import Json.Encode as Json
+import Components.Autocomplete as Autocomplete exposing (ActionType(SetText))
 
 
 type alias ViewErrorRecordProps =
@@ -74,7 +75,7 @@ viewErrorRecord { isActive, aboutToDelete } record =
             [ div [ style msgStyle ]
                 [ a
                     [ style css.wrapper ]
-                    [ span [ style css.appName ] [ text appName ]
+                    [ span [ style css.appName, onClick (UpdateFilters FilterApp (SetText record.app)) ] [ text appName ]
                     , span [ style css.message ] [ text record.message ]
                     ]
                 , span
@@ -83,7 +84,7 @@ viewErrorRecord { isActive, aboutToDelete } record =
                         [ property "innerHTML" occurrences ]
                         []
                     , text " "
-                    , span [ style css.envBadge ] [ text envName ]
+                    , span [ style css.envBadge, onClick (UpdateFilters FilterEnvironment (SetText record.env)) ] [ text envName ]
                     , text " "
                     , span [] [ text howLongAgo ]
                     ]
@@ -138,6 +139,7 @@ css =
         , "text-transform" => "uppercase"
         , "font-size" => "9px"
         , "letter-spacing" => "0.05em"
+        , "cursor" => "pointer"
         ]
     , listItem =
         [ "outline" => "0"
@@ -167,6 +169,7 @@ css =
         , "white-space" => "nowrap"
         , "overflow" => "hidden"
         , "text-overflow" => "ellipsis"
+        , "cursor" => "pointer"
         ]
     , msgBlock =
         [ "font-family" => "menlo, monospace"

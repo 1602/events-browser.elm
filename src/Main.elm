@@ -27,6 +27,9 @@ type alias Model =
     , selectedRecordId : ErrorRecordId
     , filter : Filters.Model
     , focus : String
+    , keyboard :
+        { meta : Bool
+        }
     }
 
 

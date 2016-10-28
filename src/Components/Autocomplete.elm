@@ -3,7 +3,7 @@ module Components.Autocomplete
         ( autocomplete
         , Model
         , init
-        , ActionType
+        , ActionType(SetText)
         , update
         )
 
