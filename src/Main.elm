@@ -40,6 +40,7 @@ init =
         ""
         Filters.init
         ""
+        { meta = False }
     , fetchCmd
     )
 
@@ -126,7 +127,19 @@ update msg model =
         SelectErrorRecord errorRecordId ->
             update (FocusOn errorRecordId) { model | selectedRecordId = errorRecordId }
 
-        KeyMsg code ->
+        KeyUpMsg code ->
+            let
+                { keyboard } =
+                    model
+            in
+                case code of
+                    91 ->
+                        { model | keyboard = { keyboard | meta = False } } ! []
+
+                    _ ->
+                        model ! []
+
+        KeyDownMsg code ->
             if model.filter.app.expanded || model.filter.env.expanded || model.filter.message.expanded then
                 model ! []
             else
@@ -137,21 +150,38 @@ update msg model =
                     'K' ->
                         navigateInList prevId model
 
-                    _ ->
-                        let
-                            a =
-                                Debug.log "key pressed" code
-                        in
+                    'R' ->
+                        if model.keyboard.meta then
+                            ( model, fetchCmd )
+                        else
                             model ! []
 
-navigateInList : (ErrorRecordId -> List ErrorRecord -> ErrorRecordId) -> Model -> (Model, Cmd Msg)
+                    _ ->
+                        let
+                            { keyboard } =
+                                model
+                        in
+                            case code of
+                                91 ->
+                                    { model | keyboard = { keyboard | meta = True } } ! []
+
+                                _ ->
+                                    let
+                                        a =
+                                            Debug.log "key pressed" code
+                                    in
+                                        model ! []
+
+
+navigateInList : (ErrorRecordId -> List ErrorRecord -> ErrorRecordId) -> Model -> ( Model, Cmd Msg )
 navigateInList fn model =
     let
         id =
             visibleRecords model.filter model.records
-                |> nextId model.selectedRecordId
+                |> fn model.selectedRecordId
     in
         update (SelectErrorRecord id) model
+
 
 nextId : ErrorRecordId -> List ErrorRecord -> ErrorRecordId
 nextId id list =
@@ -233,7 +263,8 @@ prev list id =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Keyboard.downs KeyMsg
+        [ Keyboard.downs KeyDownMsg
+        , Keyboard.ups KeyUpMsg
         ]
 
 

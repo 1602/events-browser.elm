@@ -19,5 +19,6 @@ type Msg
     | FetchError Http.Error
     | UpdateFilters FilterType ActionType
     | SelectErrorRecord ErrorRecordId
-    | KeyMsg Keyboard.KeyCode
+    | KeyDownMsg Keyboard.KeyCode
+    | KeyUpMsg Keyboard.KeyCode
     | FocusOn String
